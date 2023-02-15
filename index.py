@@ -8,12 +8,12 @@ import psutil
 
 def start_indexing():
     path_root = 'WEBPAGES_RAW/'
-    for i in range(1):
-        for j in range(250):
+    for i in range(5,6):
+        for j in range(250,500):
             print('RAM memory percent used:', psutil.virtual_memory()[2])
             path = f'{path_root}{i}/{j}'
             print(path)
-            pageReader = open(path)
+            pageReader = open(path, encoding='utf-8')
             content = pageReader.read()
             soup = BeautifulSoup(content, features="lxml")
             text = soup.get_text()
@@ -56,10 +56,14 @@ def add_tokens_to_disk(token_dict):
     # g_p = open('g-p.json', 'a+')
     # q_z = open('q-z.json', 'a+')
     # other = open('other.json', 'a+')
-    a_dict = json.load(open('a-f.json'))
-    g_dict = json.load(open('g-p.json'))
-    q_dict = json.load(open('q-z.json'))
-    other_dict = json.load(open('other.json'))
+    with open('a-f.json') as af:
+        a_dict = json.load(af)
+    with open('g-p.json') as gf:
+        g_dict = json.load(gf)
+    with open('q-z.json') as qf:
+        q_dict = json.load(qf)
+    with open('other.json') as of:
+        other_dict = json.load(of)
     for token in token_dict:
         if token[0] >= 'a' and token[0] <= 'f':
             if token in a_dict:
@@ -81,11 +85,23 @@ def add_tokens_to_disk(token_dict):
                 other_dict[token].append(token_dict[token])
             else:
                 other_dict[token] = [token_dict[token]]
+    with open('a-f.json', 'w') as af:
+        json.dump(a_dict, af)
+    with open('g-p.json', 'w') as gf:
+        json.dump(g_dict, gf)
+    with open('q-z.json', 'w') as qf:
+        json.dump(q_dict, qf)
+    with open('other.json', 'w') as of:
+        json.dump(other_dict, of)
 
-    json.dump(a_dict, open('a-f.json', 'w'))
-    json.dump(g_dict, open('g-p.json', 'w'))
-    json.dump(q_dict, open('q-z.json', 'w'))
-    json.dump(other_dict, open('other.json', 'w'))
+    del a_dict
+    del g_dict
+    del q_dict
+    del other_dict
+    
+    
+    
+    
 
 def test():
     pageReader = open('WEBPAGES_RAW/0/2')
