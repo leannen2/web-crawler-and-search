@@ -1,6 +1,8 @@
 import json
 import math
 
+from lxml import html
+
 def calc_weight():
     index = json.load(open("index.json"))
     for token in index:
@@ -24,6 +26,8 @@ def test_calc_weight():
         print(token)
         json.dump(subIndex, open('newIndex.json', 'w'))
         break
+def html_weight():
+        passgit 
 
 if __name__ == "__main__":
     calc_weight()
