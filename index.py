@@ -8,8 +8,9 @@ import psutil
 
 def start_indexing():
     path_root = 'WEBPAGES_RAW/'
-    for i in range(5,6):
-        for j in range(250,500):
+    index = {}
+    for i in range(74):
+        for j in range(500):
             print('RAM memory percent used:', psutil.virtual_memory()[2])
             path = f'{path_root}{i}/{j}'
             print(path)
@@ -19,8 +20,20 @@ def start_indexing():
             text = soup.get_text()
             text = text.replace('\n',' ')
             tokens_dict = tokenize(text, f'{i}/{j}')
-            add_tokens_to_disk(tokens_dict)
-
+            add_tokens_to_index(tokens_dict, index)
+    for j in range(497):
+        print('RAM memory percent used:', psutil.virtual_memory()[2])
+        path = f'{path_root}{74}/{j}'
+        print(path)
+        pageReader = open(path, encoding='utf-8')
+        content = pageReader.read()
+        soup = BeautifulSoup(content, features="lxml")
+        text = soup.get_text()
+        text = text.replace('\n',' ')
+        tokens_dict = tokenize(text, f'{74}/{j}')
+        add_tokens_to_index(tokens_dict, index)
+    with open('index.json', 'w') as f:
+        json.dump(index, f)
 def index_page(pageId, tokens):
     pass
 
@@ -28,13 +41,13 @@ def tokenize(text, docId):
     stopWords = ['a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours\tourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves']
     tokens = ''
     for a in text:
-        if a.isalnum() ==  False:
+        if a.isalnum() ==  False or a.isascii() == False:
             tokens+= ' '
         else:
             tokens+=a
     tokens = tokens.lower().split()
-    tokens = lemmatize_tokens(tokens)
-    tokens = list(filter(lambda x: x[0] not in stopWords and len(x) > 2, tokens))
+    lemmatize_tokens(tokens)
+    tokens = list(filter(lambda x: x not in stopWords and len(x) > 2, tokens))
     token_count = {}
     for token in tokens:
         if token not in token_count:
@@ -46,76 +59,49 @@ def tokenize(text, docId):
 
 def lemmatize_tokens(tokens):
     lemmatizer = WordNetLemmatizer()
-    tokens = [lemmatizer.lemmatize(token) for token in tokens]
-    #print('testing lemmatize', lemmatizer.lemmatize("ponies"))
-    return tokens
-# tokenizer = ReppTokenizer('/home/alvas/repp/') 
+    for index in range(len(tokens)):
+        for l in ['n','v', 'a', 'r', 's']:
+            lemma = lemmatizer.lemmatize(tokens[index], pos=l)
+            if lemma != tokens[index]:
+                tokens[index] = lemma
+                break
 
-def add_tokens_to_disk(token_dict):
-    # a_f = open('a-f.json', 'a+')
-    # g_p = open('g-p.json', 'a+')
-    # q_z = open('q-z.json', 'a+')
-    # other = open('other.json', 'a+')
-    with open('a-f.json') as af:
-        a_dict = json.load(af)
-    with open('g-p.json') as gf:
-        g_dict = json.load(gf)
-    with open('q-z.json') as qf:
-        q_dict = json.load(qf)
-    with open('other.json') as of:
-        other_dict = json.load(of)
+def add_tokens_to_index(token_dict, index):
     for token in token_dict:
-        if token[0] >= 'a' and token[0] <= 'f':
-            if token in a_dict:
-                a_dict[token].append(token_dict[token])
-            else:
-                a_dict[token] = [token_dict[token]]
-        elif token[0] >= 'g' and token[0] <= 'p':
-            if token in g_dict:
-                g_dict[token].append(token_dict[token])
-            else:
-                g_dict[token] = [token_dict[token]]
-        elif token[0] >= 'q' and token[0] <= 'z':
-            if token in q_dict:
-                q_dict[token].append(token_dict[token])
-            else:
-                q_dict[token] = [token_dict[token]]
+        if token in index:
+            index[token].append(token_dict[token])
         else:
-            if token in other_dict:
-                other_dict[token].append(token_dict[token])
-            else:
-                other_dict[token] = [token_dict[token]]
-    with open('a-f.json', 'w') as af:
-        json.dump(a_dict, af)
-    with open('g-p.json', 'w') as gf:
-        json.dump(g_dict, gf)
-    with open('q-z.json', 'w') as qf:
-        json.dump(q_dict, qf)
-    with open('other.json', 'w') as of:
-        json.dump(other_dict, of)
-
-    del a_dict
-    del g_dict
-    del q_dict
-    del other_dict
-    
-    
+            index[token] = [token_dict[token]]
     
     
 
 def test():
-    pageReader = open('WEBPAGES_RAW/0/2')
+    # pageReader = open('WEBPAGES_RAW/0/2')
+    # content = pageReader.read()
+    # soup = BeautifulSoup(content, features="lxml")
+    # text = soup.get_text()
+    # text = text.replace('\n',' ')
+    #print(text)
+
+    #tokens = tokenizer.tokenize(text)
+    # tokens_dict = tokenize(text, '0/2')
+    #print(tokens_dict)
+    # add_tokens_to_disk(tokens_dict)
+    # json.dump(tokens_dict, open('other.json', 'w'))
+    # lemmatizer = WordNetLemmatizer()
+    # tokens = ['vertices', 'running', 'flower', 'objectively', 'quickly']
+    # lemmatize_tokens(tokens)
+    # print(tokens)
+    path = 'WEBPAGES_RAW/26/325'
+    pageReader = open(path, encoding='utf-8')
     content = pageReader.read()
     soup = BeautifulSoup(content, features="lxml")
     text = soup.get_text()
     text = text.replace('\n',' ')
-    #print(text)
-
-    #tokens = tokenizer.tokenize(text)
-    tokens_dict = tokenize(text, '0/2')
-    #print(tokens_dict)
-    add_tokens_to_disk(tokens_dict)
-    json.dump(tokens_dict, open('other.json', 'w'))
+    tokens = tokenize(text, '26/325')
+    json.dump(tokens,open('test.json','w'))
+    print(text)
+    print(tokens)
 
 if __name__ == "__main__":
     # import nltk
@@ -133,4 +119,5 @@ if __name__ == "__main__":
     #test()
 
     start_indexing()
+
 
