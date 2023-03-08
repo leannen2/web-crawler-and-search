@@ -1,4 +1,6 @@
 import json
+import math
+from collections import defaultdict
 
 query = input("Please enter user input: ")
 with open('index.json') as json_file:
@@ -16,31 +18,54 @@ print(linksList, numberLinks)
 
 
 
-# calculate the score of a document given the query
-def queryScore(query, document):
-    # we get the sum of the query/document weight
+# calculate the score of a document given the query word
+def queryScore(document, querydict, querylength):
+
+    index = json.load(open("indexWithNormalizedWeights.json"))
+    docFreqindex = json.load(open("docFreq.json"))
+    
     res = 0
-    for word in query:
-        # obtain the weight of the word in the document
-        index = json.load(open("index.json"))
+    # get the query score for every word in the query
+    for word in querydict:
+        # iterate through all words and find the tokens that match the query word
         for token in index:
             if token == word:
                 for doc in index[token]:
                     if doc == document:
-                        res += doc['tfidf']
+                        prenormalized = ( 1 + math.log10(querydict[word]) ) * docFreqindex[word]
+                        res += (prenormalized)/querylength * doc['weight']
+
+                    break      
                 break   # saves time? (because there's no need to iterate through rest of tokens if we already found)
-            
+
     return res
 
 
 
-# def main():
-#     query = ""
+def main():
+    query = "best car insurance"
 
-#     DocScores = {}  # dict to track document's query scores
-#     # for every document, calculate the query score
-#     for doc in document_list:
-#         DocScores[doc] = queryScore(query, doc)
+    # this keeps track of how many times each word appears in the query
+    querydict = defaultdict(int)
+    for word in query.lower.split():
+        querydict[word] += 1
 
-#     # now rank the documents best to last (the search results)
-#     return sorted(DocScores)
+    # quickly compute the query length once, to get the normalization denominator to pass in function
+    sum = 0
+    docFreqindex = json.load(open("docFreq.json"))
+    for word in querydict:
+        for token in docFreqindex:
+            if token == word:
+                sum +=  ( ( 1 + math.log10(querydict[word]) ) * docFreqindex[word] )**2
+    querylength = math.sqrt(sum)
+    
+    DocScores = {}  # dict to track document's query scores
+    # for every document, calculate the query score
+    
+    for doc in document_list:
+        DocScores[doc] = queryScore(doc, querydict, querylength)
+
+
+
+    # now rank the documents best to last (the search results)
+    return sorted(DocScores)[0]
