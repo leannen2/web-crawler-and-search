@@ -20,6 +20,7 @@ def start_indexing():
             text = soup.get_text()
             text = text.replace('\n',' ')
             tokens_dict = tokenize(text, f'{i}/{j}')
+            tag_weight(tokens_dict, soup, f'{i}/{j}')
             add_tokens_to_index(tokens_dict, index)
     for j in range(497):
         print('RAM memory percent used:', psutil.virtual_memory()[2])
@@ -31,11 +32,45 @@ def start_indexing():
         text = soup.get_text()
         text = text.replace('\n',' ')
         tokens_dict = tokenize(text, f'{74}/{j}')
+        tag_weight(tokens_dict, soup, f'{74}/{j}')
         add_tokens_to_index(tokens_dict, index)
     with open('index.json', 'w') as f:
         json.dump(index, f)
-def index_page(pageId, tokens):
-    pass
+
+
+def tag_weight(index, soup, docId):
+    # index = json.load(open("indexWithTfidf.json"))
+    title = soup.find('title')
+    if title:
+        increment_tag_count(index, 'title', title.get_text(), docId)
+    bold = soup.find('b')
+    if bold:
+        increment_tag_count(index, 'bold', bold.get_text(), docId)
+    for headerNum in range(1,7):
+        headerTag = f'h{headerNum}'
+        header = soup.find(headerTag)
+        if header:
+            increment_tag_count(index, 'header', header.get_text(), docId)
+
+def increment_tag_count(index, key, text, docId):
+    stopWords = ['a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours\tourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves']
+    tokens = ''
+    for a in text:
+        if a.isalnum() ==  False or a.isascii() == False:
+            tokens+= ' '
+        else:
+            tokens+=a
+    tokens = tokens.lower().split()
+    lemmatize_tokens(tokens)
+    tokens = list(filter(lambda x: x not in stopWords and len(x) > 2, tokens))
+    for token in tokens:
+        if token not in index:
+            print(f'{token} added to index')
+            index[token] = {'docId':docId, 'count': 1}
+        if key not in index[token]:
+            index[token][key] = 1
+        else:
+            index[token][key] += 1
 
 def tokenize(text, docId):
     stopWords = ['a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', "aren't", 'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', "can't", 'cannot', 'could', "couldn't", 'did', "didn't", 'do', 'does', "doesn't", 'doing', "don't", 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', "hadn't", 'has', "hasn't", 'have', "haven't", 'having', 'he', "he'd", "he'll", "he's", 'her', 'here', "here's", 'hers', 'herself', 'him', 'himself', 'his', 'how', "how's", 'i', "i'd", "i'll", "i'm", "i've", 'if', 'in', 'into', 'is', "isn't", 'it', "it's", 'its', 'itself', "let's", 'me', 'more', 'most', "mustn't", 'my', 'myself', 'no', 'nor', 'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours\tourselves', 'out', 'over', 'own', 'same', "shan't", 'she', "she'd", "she'll", "she's", 'should', "shouldn't", 'so', 'some', 'such', 'than', 'that', "that's", 'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', "there's", 'these', 'they', "they'd", "they'll", "they're", "they've", 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', "wasn't", 'we', "we'd", "we'll", "we're", "we've", 'were', "weren't", 'what', "what's", 'when', "when's", 'where', "where's", 'which', 'while', 'who', "who's", 'whom', 'why', "why's", 'with', "won't", 'would', "wouldn't", 'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves']
