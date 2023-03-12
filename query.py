@@ -50,17 +50,22 @@ def queryScore(query):
     # get the query score for every word in the query
     for word in queryCount:
         # iterate through all words and find the tokens that match the query word
-        for doc in index[word]:    
-            DOCSCORES[doc["docId"]] += (queryWeight[word])/querylength * doc["weight"]
+
+        # what if the word is not in the index?
+
+        for doc in index[word]:
+            htmlweight = 0
+            if doc["header"] != 0:
+                htmlweight = 0.5 + math.log10(doc["header"])
+                
+            DOCSCORES[doc["docId"]] += (queryWeight[word])/querylength * doc["weight"] + htmlweight
 
 
     # return the top 20 results
     sortedScores = sorted(DOCSCORES.items(), key=lambda x:x[1], reverse=True)
     results = []
-    i = 0
-    while i < 20:
+    for i in range(0,20):
         results.append(sortedScores[i])
-        i += 1
 
     print(results)
     return results
@@ -68,7 +73,7 @@ def queryScore(query):
 
 
 def main():
-    query = "best car insurance"
+    query = "Irvine"
 
     queryScore(query)
 
