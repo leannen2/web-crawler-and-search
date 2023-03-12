@@ -1,8 +1,10 @@
 import json
 import math
 from collections import defaultdict
-from nltk.stem import WordNetLemmatizer
+import nltk
+nltk.download('wordnet')
 
+from nltk.stem import WordNetLemmatizer
 # query = input("Please enter user input: ")
 # with open('index.json') as json_file:
 #     indexDict = json.load(json_file)
@@ -73,15 +75,20 @@ def queryScore(query):
     # get the query score for every word in the query
     for word in queryCount:
         # iterate through all words and find the tokens that match the query word
-
-        # what if the word is not in the index?
-
-        for doc in index[word]:
-            htmlweight = 0
-            if doc["header"] != 0:
-                htmlweight = 0.5 + math.log10(doc["header"])
-                
-            DOCSCORES[doc["docId"]] += (queryWeight[word])/querylength * doc["weight"] + htmlweight
+        try:
+            for doc in index[word]:
+                htmlweight = 0
+                if doc["title"] != 0:
+                    htmlweight += 0.5 + math.log10(doc["title"])
+                if doc["header"] != 0:
+                    htmlweight += 0.3 + math.log10(doc["header"])
+                if doc["bold"] != 0:
+                    htmlweight += 0.2 + math.log10(doc["bold"])
+                    
+                DOCSCORES[doc["docId"]] += (queryWeight[word])/querylength * doc["weight"] + htmlweight
+        except:
+            # (KeyError: index[word]) the word is not in the index
+            pass
 
 
     # return the top 20 results
@@ -90,7 +97,6 @@ def queryScore(query):
     for i in range(0,20):
         results.append(sortedScores[i])
 
-    print(results)
     return results
 
 
@@ -98,7 +104,18 @@ def queryScore(query):
 def main():
     query = "artificial intelligence"
 
-    queryScore(query)
+    
+    # get list of top 20 relevant links
+    top20 = queryScore(query)
+
+
+    bookkeepingIndex = json.load(open("bookkeeping.json"))
+    for i, docid in enumerate(top20):
+        print(f"{i+1}. {bookkeepingIndex[docid[0]]}")
+    
+    # print(top20)
+
+    
 
 
 
