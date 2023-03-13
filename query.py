@@ -2,7 +2,6 @@ import json
 import math
 from collections import defaultdict
 import nltk
-nltk.download('wordnet')
 
 from nltk.stem import WordNetLemmatizer
 # query = input("Please enter user input: ")
@@ -102,21 +101,21 @@ def queryScore(query):
 
 
 def main():
-    query = "artificial intelligence"
+    # query = "artificial intelligence"
 
     
-    # get list of top 20 relevant links
-    top20 = queryScore(query)
+    # # get list of top 20 relevant links
+    # top20 = queryScore(query)
 
 
-    bookkeepingIndex = json.load(open("bookkeeping.json"))
-    for i, docid in enumerate(top20):
-        print(f"{i+1}. {bookkeepingIndex[docid[0]]}")
+    # bookkeepingIndex = json.load(open("bookkeeping.json"))
+    # for i, docid in enumerate(top20):
+    #     print(f"{i+1}. {bookkeepingIndex[docid[0]]}")
     
     # print(top20)
+    pass
 
     
 
 
 
-main()
