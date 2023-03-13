@@ -2,18 +2,19 @@ import query
 import os
 from bs4 import BeautifulSoup
 import tkinter as tk
-
+import json
 
 
 def search(queryInput):
     docIdList = list()
     resultList = list()
     searchResults = query.queryScore(queryInput)
+    bookkeeping = json.load(open('bookkeeping.json'))
     for i in searchResults:
         docIdList.append(i[0])
 
     for x, i in enumerate(docIdList):
-        path = "C:/Users/yashc/Downloads/webpages/WEBPAGES_RAW" + "/" + str(i)
+        path = "WEBPAGES_RAW" + "/" + str(i)
 
         pageReader = open(path, encoding='utf-8')
         content = pageReader.read()
@@ -23,9 +24,11 @@ def search(queryInput):
             title_text = title.get_text() .strip()
             addString = str(x+1) + "." +" " + title_text
         resultList.append(addString)
+        resultList.append('\t' + bookkeeping[i])
         text = soup.get_text().strip()
         firstTen = (text.split()[:15])
-        resultList.append(" ".join(firstTen))
+        resultList.append('\t' + " ".join(firstTen))
+        
 
     return resultList
 
@@ -45,7 +48,7 @@ window = tk.Tk()
 window.title("CS 121 Project 3")
 window.attributes('-fullscreen', True)
 
-image = tk.PhotoImage(file="C:/Users/yashc/Documents/GitHub/cs121project3/121picture.png")
+image = tk.PhotoImage(file="121picture.png")
 
 image_label = tk.Label(window, image=image)
 image_label.pack()
